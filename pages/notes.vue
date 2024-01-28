@@ -5,10 +5,12 @@
     </div>
     <div class="notes-list">
       <div class="note-content">
-        <div class="note-preview" v-for="note in filteredNotes" :key="note.id">
+   <div class="note-preview" v-for="note in filteredNotes" :key="note.id">
         <h3>{{ note.title }}</h3>
-        <p>{{ note.preview }}</p>
-        <small style="color: rgb(163, 163, 163);">{{ note.date }}</small>
+  <!-- Make sure the property name matches what's in the object -->
+  <p>{{ note.content }}</p>
+  <small style="color: rgb(163, 163, 163);">{{ note.createdAt || note.created }}</small>
+
         <button @click="deleteNote(note.id)" class="delete-note-btn">Delete</button>
       </div>
     
@@ -49,33 +51,43 @@ import { useNuxtApp } from '#app'; // Ensure this import is present
 const { $api } = useNuxtApp();
 const searchQuery = ref('');
 const showNoteForm = ref(false);
+
 const notes = ref([]);
+
 const newNote = ref({
   title: '',
   content: '',
 });
 
-// Function to fetch notes from PocketBase
-// Replace api with $api inside your methods
+
 const fetchNotes = async () => {
   try {
     const response = await $api.get('collections/Notes/records');
-    notes.value = response.data.records;
+    // Assign the fetched notes to the notes.value
+    notes.value = response.data.items || []; // Fallback to an empty array if items is undefined
   } catch (error) {
     console.error('Failed to fetch notes:', error);
+    notes.value = []; // Fallback to an empty array in case of an error
   }
 };
+
 
 
 // Function to save a new note to PocketBase
 const submitNewNote = async () => {
   if (newNote.value.title && newNote.value.content) {
-    try {
-      const response = await $api.post('collections/Notes/records', { // Use $api here
-        title: newNote.value.title,
-        content: newNote.value.content,
-      });
-      notes.value.push(response.data);
+     try {
+    const response = await $api.post('collections/Notes/records', {
+      title: newNote.value.title,
+      content: newNote.value.content,
+    });
+    // Ensure notes.value is an array
+    if (!Array.isArray(notes.value)) {
+      notes.value = [];
+    }
+ console.log(response.data);
+notes.value.push(response.data);
+
       newNote.value.title = '';
       newNote.value.content = '';
       showNoteForm.value = false;
